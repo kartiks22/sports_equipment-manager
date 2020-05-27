@@ -1,6 +1,9 @@
 {% extends 'EndUser/advlayout.html' %}
 
 {% block body %}
+  {% block error_block %}
+    <h3 style="color: #FF0000">{{error}}</h3>
+  {% endblock %}
 
   <div class="container">
     <br>

@@ -4,7 +4,7 @@ from login.models import UserProfileInfo
 from django import forms
 from django.contrib.auth import authenticate,login,logout
 from django.http import HttpResponseRedirect, HttpResponse
-from django.urls import reverse    
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMessage
 import random
@@ -43,7 +43,8 @@ def otp(request):
             return render(request,'Login/login.html')
         else:
             error = "OTP doesn't match"
-            return HttpResponse(error)
+            #return HttpResponse(error)
+            return render(request,'Login/login.html',{'error':error,})
 
 
 
@@ -57,9 +58,9 @@ def register(request):
 
         if user_form.is_valid() and profile_form.is_valid():
             if  validate(user_form.cleaned_data.get("email")):
-                
+
                 otp_no = random.randint(1000000, 9999999)
-                mail = EmailMessage('Sports Room Authentication', 'Authentication key: '+str(otp_no), 
+                mail = EmailMessage('Sports Room Authentication', 'Authentication key: '+str(otp_no),
                     to=[user_form.cleaned_data.get("email")])
                 mail.send()
 
@@ -96,26 +97,29 @@ def register(request):
 
 def user_login(request):
     if request.method =='POST':
-        
+
         username = request.POST.get('username').upper()
         password = request.POST.get('password')
 
         user = authenticate(username=username,password=password)
-        userprofile = UserProfileInfo.objects.get(user=user)
-        if(userprofile.is_verified==0):
-            return render(request,'Login/otp.html',{'otp_no':userprofile.otp_no,
-                    'email':user.email})
-        # print (userprofile.profile_pic)
+
         if user:
             if user.is_active:
                 login(request,user)
                 # return HttpResponseRedirect(reverse('home'))
+                userprofile = UserProfileInfo.objects.get(user=user)
+                if(userprofile.is_verified==0):
+                    return render(request,'Login/otp.html',{'otp_no':userprofile.otp_no,
+                            'email':user.email})
                 return redirect('/sportsEquipment/home')
             else:
-                return HttpResponse("ACCOUNT NOT ACTIVE")
+                #return HttpResponse("ACCOUNT NOT ACTIVE")
+                return render(request,'Login/login.html',{'error':"ACCOUNT NOT ACTIVE"})
         else:
-            print("login Failed")
-            return HttpResponse("Invalid login Details")
+            print("login Failed due to inactive account")
+            return render(request,'Login/login.html',{'error':"Invalid login Details"})
+        # print (userprofile.profile_pic)
+
 
     else:
         return render(request,'Login/login.html')

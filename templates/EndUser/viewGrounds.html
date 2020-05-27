@@ -1,25 +1,33 @@
 {% extends 'EndUser/advlayout.html' %}
 
 {% block body %}
-
-  {% for each_ground_name, each_ground_times in groundList %}
-    <h2>Ground Name: {{each_ground_name}}</h2>
-    <table class="table table-hover">
-      <thead>
-        <tr>
-          <th>Holder Id</th>
-          <th>Time of Holding</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for person, persons_time in each_ground_times %}
-          <tr>
-            <td>{{person}}</td>
-            <td>From {{persons_time.0}} to {{persons_time.1}}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endfor %}
+  {% if groundList|length == 0 %}
+    <h2>No Grounds Added. Contact Your Sports Staff to add Ground.</h2>
+  {% else %}
+    {% for each_ground_name, curr_owner, each_ground_times in groundList %}
+      <h2>Ground Name: {{each_ground_name}}. Current Holder: {{curr_owner}}</h2>
+      {% if each_ground_times|length != 0 %}
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Holder Id</th>
+              <th>Time of Holding</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for person, persons_time in each_ground_times %}
+              <tr>
+                <td>{{person}}</td>
+                <td>From {{persons_time.0}} to {{persons_time.1}}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <h3>No Bookings</h3>
+      {% endif %}
+      <hr>
+    {% endfor %}
+  {% endif %}
 
 {% endblock%}

@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     # 'corsheaders',
     'login',
     'sportsEquipment',
-    # 'django_apscheduler', 
+    # 'django_apscheduler',
 ]
 
 # CELERY STUFF
@@ -162,8 +162,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'sportsroomiiitb2020@gmail.com'
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = 'sportsroomforweb@gmail.com'
+EMAIL_HOST_PASSWORD = 'sports@room@iiitb'
 
 DAILY_PENALTY = 5
 RETURN_PERIOD = 1
@@ -207,23 +207,23 @@ LOGGING = {
         #},
   },
   'loggers': {
-        #'django.request': {
-        #    'handlers': ['logstash'],
-        #    'level': 'INFO',
-        #    'propagate': True,
-        #},
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
         'django': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },
         'django.request': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
         },

@@ -1,12 +1,16 @@
 {% extends "Login/base.html" %}
 {% block content %}
 
+{% block error_block %}
+	<h4 style="color:red">{{ error }}</h4>
+{% endblock %}
+
 <div class="jumbotron">
 	<h1>Please Login</h1>
 	<form action="{% url 'login:user_login' %}" method="POST">
 		{% csrf_token %}
 
-		
+
 		<label for="username">Username:</label>
 		<input type="text" name="username" placeholder="Enter username">
 

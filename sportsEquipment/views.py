@@ -74,8 +74,8 @@ def eqpRequest(request):
 				currentDateTime = datetime.today()
 				# print(currentDateTime)
 				requestedQuantity = request.POST['EqpQuantity']
-				
-				
+
+
 				equipmentRequest.quantity       = requestedQuantity
 				equipmentRequest.eqp            = Equipments.objects.get(pk=int(request.POST['EqpName'],10))
 				equipmentRequest.user           = user
@@ -89,8 +89,8 @@ def eqpRequest(request):
 				return redirect(reverse('sportsEquipment:viewRequest'))
 			else:
 				return HttpResponse("Equipment not available")
-			   
-				
+
+
 
 	else:
 		# lstEqpmnt = Equipments.objects.all().order_by('eqpName')
@@ -209,7 +209,7 @@ def viewRequest(request):
 	lstRequest = list(EquipmentRequest.objects.filter(user=user).order_by('-dtOfRequest'))
 	# print(lstRequest)
 	lstRequest = utcToIst(lstRequest)
-	
+
 		# request.dtOfRequest = request.dtOfRequest.astimezone(timezone('Asia/Kolkata'))
 	# print("No of requests: ", len(lstRequest))
 	return render(request, 'EndUser/viewRequest.html', {'lstRequest': lstRequest,'userProfile': userProfile});
@@ -225,7 +225,10 @@ def viewInventory(request):
 		req.eqpQuantityTaken = req.eqpQuantity - req.eqpQuantityTaken
 	# print(context)
 	# print("No of requests: ", len(context))
-	return render(request, 'AdminUser/viewEquipList.html', {'context': context,'userProfile': userProfile});
+	if request.user.is_staff:
+		return render(request, 'AdminUser/viewEquipList.html', {'context': context,'userProfile': userProfile});
+	else:
+		return render(request, 'EndUser/viewEquipList.html', {'context': context,'userProfile': userProfile});
 
 
 #method to view all pending requests to be processed by the sports room admin
@@ -261,7 +264,7 @@ def processRequest(request):
 		requestedQuantity = penReq.quantity
 		# print(requestedQuantity)
 		# print(eqp.eqpQuantity - eqp.eqpQuantityTaken)
-		if(requestedQuantity <= (eqp.eqpQuantity - eqp.eqpQuantityTaken)) :    
+		if(requestedQuantity <= (eqp.eqpQuantity - eqp.eqpQuantityTaken)) :
 			penReq.reqStatus    = 1
 			penReq.dtAvailed    = currentTime
 			penReq.dtOfExpRet   = currentTime + timedelta(days=1)
@@ -308,7 +311,7 @@ def addGround(request):
 		form = addGroundForm(request.POST)
 		if form.is_valid():
 			form.save()
-		return viewInventory(request)
+		return redirect('/sportsEquipment/viewGrounds')
 	else:
 		if(request.user.is_staff==False):
 			return redirect('/sportsEquipment/')
@@ -332,7 +335,7 @@ def check_time(sh,sm,eh,em):
 	if(dm>120):
 		return False
 	return True
- 
+
 def check_ground_availability(s_tm,e_tm,booked):
 	for i in booked:
 		if(int(i[1])<=s_tm):
@@ -353,7 +356,7 @@ def groundRequests(request):
 		# print("dafafasasasfassafasasffsasf",groundtype)
 		current_ground = Ground.objects.get(gId=groundtype)
 		booked = [ x.split(',') for x in current_ground.booked.split(';') if x!='']
-		
+
 		sh = int(request.POST["start_hour"])
 		sm = int(request.POST["start_min"])
 		# print("daadffasafs",booked)
@@ -362,18 +365,20 @@ def groundRequests(request):
 		em = int(request.POST["end_min"])
 		# print("end",end_tm)
 		if(check_time(sh,sm,eh,em)==False):
-			return HttpResponse("Cannot book the ground or court for more than 2 hrs")
+			return render(request, 'EndUser/g_request.html', {'form': form,'userProfile': userProfile,'error':"Cannot book the ground or court for more than 2 hrs"})
+			#return HttpResponse("Cannot book the ground or court for more than 2 hrs")
 
 		if(check_ground_availability(sh*100 +sm,eh*100 +em,booked)):
 			#booked.append((sh*100 + sm,eh*100 +em))
 			current_ground.booked += str(sh*100 + sm) + "," + str(eh*100 + em) +";"
 			current_ground.who_booked += str(request.user.username)+";"
 			current_ground.save()
-			return redirect('/sportsEquipment/home')
+			return redirect('/sportsEquipment/viewGrounds')
 		else:
-			return HttpResponse("Ground not available")
+			return render(request, 'EndUser/g_request.html', {'form': form,'userProfile': userProfile,'error':"Ground not available"})
+			#return HttpResponse("Ground not available")
 
-	else: 
+	else:
 		form = ground_form()
 		return render(request, 'EndUser/g_request.html', {'form': form,'userProfile': userProfile})
 
@@ -382,14 +387,28 @@ def viewGrounds(request):
 	userProfile = UserProfileInfo.objects.get(user=request.user)
 	if(request.user.is_authenticated==False):
 		return redirect('/login/user_login/?next=/sportsEquipment/viewGrounds/')
-	all_grounds_list = []
-	all_ground_names = []
+	groundList_final = []
+
+	curr_date_time = datetime.now(timezone('Asia/Kolkata'))
 	for ground in Ground.objects.all():
+		all_grounds_list = []
 		a = ground.who_booked.split(';')
 		b = ground.booked.split(';')
-		all_grounds_list.append([ (a[i],tuple(b[i].split(','))) for i in range(len(a)) if a[i]!="" ])
-		all_ground_names.append(str(ground.gname))
+		curr_ground_owners = "None"
+		for i in range(len(a)):
+			temp_times = b[i].split(',')
+			if(a[i]!=""):
+				start_time_hour = int(temp_times[0])//100
+				start_time_min = int(temp_times[0])%100
+				end_time_hour = int(temp_times[1])//100
+				end_time_min = int(temp_times[1])%100
+				start_time_str = str(start_time_hour - 12)+":"+ str(start_time_min).zfill(2)+" PM" if start_time_hour>12 else str(start_time_hour)+":"+str(start_time_min).zfill(2)+" AM"
+				end_time_str = str(end_time_hour - 12)+":"+ str(end_time_min).zfill(2)+" PM" if end_time_hour>12 else str(end_time_hour)+":"+ str(end_time_min).zfill(2)+" AM"
+				all_grounds_list.append((a[i],(start_time_str,end_time_str)))
+				if(int(temp_times[0])<= curr_date_time.hour*100+curr_date_time.minute <=int(temp_times[1]) ):
+					curr_ground_owners=str(a[i])
 
-	groundList_final = tuple(zip(all_ground_names,all_grounds_list))
-	# print(groundList_final)
-	return render(request,'EndUser/viewGrounds.html',{'groundList':groundList_final, 'userProfile': userProfile}) 
+		groundList_final.append((str(ground.gname),curr_ground_owners,all_grounds_list))
+	#groundList_final = [ (all_ground_names[i],all_grounds_list[i]) for i in range(len(all_grounds_list))]
+
+	return render(request,'EndUser/viewGrounds.html',{'groundList':groundList_final, 'userProfile': userProfile})
