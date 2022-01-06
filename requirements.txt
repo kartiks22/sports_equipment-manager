@@ -7,6 +7,6 @@ pytz
 six
 text-unidecode
 whitenoise
-celery==4.4.2
+celery==5.2.2
 redis==3.2.1
 djangorestframework
